@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    td {
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+    tr:nth-child(2n) {
+      background: #656c6e;
+      color: #fff;
+    }
+    .back {
+      background-color: #009688;
+      color: #fff;
+      text-decoration: none;
+      display: inline-block;
+      padding: 8px 16px;
+    }
+    .page-link {
+      display: inline-block;
+    }
+
+    .page-link {
+      font-size: 18px;
+      color: #fff;
+      border: none;
+      background: #4CAF50;
+      font-weight: 500;
+    }
+    .pointer {
+      cursor: pointer;
+    }
+    .pagination {
+      display: flex;
+      list-style-type: none;
+      justify-content: center;
+    }
+    .margin-top-10 {
+      margin-top: 10px;
+    }
+    .pagination li {
+      margin-left: 5px;
+    }
+    .pagination li button {
+      margin-left: 5px;
+    }
+    .capitalize {
+      text-transform: capitalize;
+    }
+    .text-center {
+      text-align: center;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <h2 class="text-center" v-if="showList">List of Cars<span
+        v-if="apiResponse.data.results.length">({{apiResponse.data.results.length}})</span></h2>
+    <h2 class="text-center" v-else>{{this.selectedVehicle.model}}</h2>
+    <table v-if="showList">
+      <tr>
+        <th>Name</th>
+        <th>Model</th>
+      </tr>
+      <tr @click="showDetails(data)" v-for="data in displayedCars()" :key="data.name">
+
+        <td class="pointer">{{data.name}}</td>
+        <td class="pointer">{{data.model}}</td>
+      </tr>
+    </table>
+    <div v-if="!showList">
+      <a class="back pointer" @click="showList=true;selectedData=undefined;">&#x2190; Back</a>
+      <table class="margin-top-10" cellspacing="0">
+        <tbody>
+          <tr v-for="(value, key) in this.selectedVehicle">
+            <td class="capitalize">{{key}}</td>
+            <td>{{value.length ? value : '-'}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <nav v-if="showList && apiResponse.data.results.length">
+      <ul class="pagination">
+        <li class="page-item">
+          <button type="button" class="page-link pointer" v-if="page != 1" @click="page--"> Previous </button>
+        </li>
+        <li class="page-item">
+          <button type="button" class="page-link pointer" v-for="pageNumber in pages.slice(page-1, page+5)"
+            @click="page = pageNumber"> {{pageNumber}} </button>
+        </li>
+        <li class="page-item">
+          <button type="button" @click="page++" v-if="page < pages.length" class="page-link pointer"> Next </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          apiResponse: [],
+          selectedVehicle: {},
+          showList: true,
+          page: 1,
+          perPage: 3,
+          pages: [],
+        }
+      },
+      methods: {
+        displayedCars() {
+          return this.paginate(this.apiResponse.data);
+        },
+        showDetails(data) {
+          this.selectedVehicle = data;
+          this.showList = false;
+        },
+        setPages() {
+          if (this.apiResponse.data.results.length) {
+            let numberOfPages = Math.ceil(this.apiResponse.data.results.length / this.perPage);
+            for (let index = 1; index <= numberOfPages; index++) {
+              this.pages.push(index);
+            }
+          }
+        },
+        paginate(data) {
+          if (data.results.length) {
+            let page = this.page;
+            let perPage = this.perPage;
+            let from = (page * perPage) - perPage;
+            let to = (page * perPage);
+            return data.results.slice(from, to);
+          }
+        }
+      },
+      watch: {
+        posts() {
+          this.setPages();
+        }
+      },
+      mounted() {
+        axios.get('https://swapi.dev/api/vehicles/').then((response) => {
+          this.apiResponse = response;
+          this.setPages();
+        })
+      }
+    }
+    );
+  </script>
+</body>
+</html>
